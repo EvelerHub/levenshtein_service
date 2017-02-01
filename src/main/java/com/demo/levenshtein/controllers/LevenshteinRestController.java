@@ -26,7 +26,7 @@ public class LevenshteinRestController {
     @Autowired
     private CompareIdentificatorsService compareIdentificatorsService;
 
-    @RequestMapping(value = "/compare", method = RequestMethod.POST)
+    @RequestMapping(value = "/compare",  method = {RequestMethod.POST})
     public List<ComparedIdentificator> compareIdentificators(
             @RequestBody ComparableIdentificators comparableIdentificators){
 
