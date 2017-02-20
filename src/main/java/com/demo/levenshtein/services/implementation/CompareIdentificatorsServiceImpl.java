@@ -1,7 +1,7 @@
 package com.demo.levenshtein.services.implementation;
 
-import com.demo.levenshtein.controllers.LevenshteinRestController;
 import com.demo.levenshtein.model.ComparedIdentificator;
+import com.demo.levenshtein.model.IdentificatorAndDistance;
 import com.demo.levenshtein.services.CompareIdentificatorsService;
 import com.demo.levenshtein.utils.IdentificatorUtils;
 import com.demo.levenshtein.utils.LevenshteinDistanceAlgorithm;
@@ -10,9 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author Alexander Eveler, alexander.eveler@gmail.com
@@ -38,38 +36,46 @@ public class CompareIdentificatorsServiceImpl implements CompareIdentificatorsSe
 
         List<String> clearedLeftIdentificators = IdentificatorUtils.clearListOfIdentificators(leftIdentificators);
         List<String> clearedRightIdentificators = IdentificatorUtils.clearListOfIdentificators(rightIdentificators);
+        List<IdentificatorAndDistance> identificatorsAndDistances;
 
         LOG.info("cleared left Identificators ==> " + clearedLeftIdentificators);
         LOG.info("cleared right Identificators ==> " + clearedRightIdentificators);
-
         List<ComparedIdentificator> comparedIdentificators = new ArrayList<>();
-        Set<Integer> removedIdentificators = new HashSet<>();
 
         for (int i = 0; i < clearedLeftIdentificators.size(); i++) {
-            int identificatorIndex = 0;
             int minDistance = Integer.MAX_VALUE;
+            identificatorsAndDistances = new ArrayList<>();
 
-            for (int j = 0; j < clearedRightIdentificators.size(); j++) {
-                if (!removedIdentificators.contains(j)) {
-                    int distance = LevenshteinDistanceAlgorithm.calculateDisntance(
-                            clearedLeftIdentificators.get(i),
-                            clearedRightIdentificators.get(j)
-                    );
-                    if (minDistance > distance) {
-                        minDistance = distance;
-                        identificatorIndex = j;
+            for (String clearedRightIdentificator : clearedRightIdentificators) {
+                int distance = LevenshteinDistanceAlgorithm.calculateDisntance(
+                        clearedLeftIdentificators.get(i),
+                        clearedRightIdentificator
+                );
+                if (minDistance > distance) {
+                    minDistance = distance;
+                }
+
+                identificatorsAndDistances.add(new IdentificatorAndDistance(clearedRightIdentificator, distance));
+            }
+
+            String rightIdentificatorsGroup = "";
+            for (IdentificatorAndDistance identificatorAndDistance : identificatorsAndDistances) {
+                if (identificatorAndDistance.getDistance() == minDistance) {
+                    if (!rightIdentificatorsGroup.equals("")) {
+                        rightIdentificatorsGroup += ", " + identificatorAndDistance.getIdentificator();
+                    } else {
+                        rightIdentificatorsGroup = identificatorAndDistance.getIdentificator();
                     }
                 }
             }
 
             ComparedIdentificator comparedIdentificator = new ComparedIdentificator(
                     leftIdentificators.get(i),
-                    rightIdentificators.get(identificatorIndex)
+                    rightIdentificatorsGroup
             );
             LOG.info("compared identificator ==> " + comparedIdentificator);
             LOG.info("compared identificator distance ==> " + minDistance);
             comparedIdentificators.add(comparedIdentificator);
-            removedIdentificators.add(identificatorIndex);
         }
 
         LOG.info("compared identificators ==> " + comparedIdentificators);

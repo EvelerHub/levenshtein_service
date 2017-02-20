@@ -11,6 +11,41 @@ $('#add_button').click(function () {
     );
 });
 
+$('#upload_input').change(function () {
+    var form_data = new FormData();
+    form_data.append("file", $('#upload_input')[0].files[0]);
+
+    $.ajax({
+        url: '/levenshtein/uploadcsv',
+        type: 'POST',
+        processData: false,
+        contentType: false,
+        data: form_data,
+        beforeSend: function () {
+            $('#upload_progress').show();
+        },
+        error: function () {
+            $("#modal_error .modal-body").html(
+                '<p>Был отправлен некоректный файл! Файл должен быть оформлен как этот ' +
+                '<a href="/example.csv">example.csv</a></p>'
+            );
+            $('#modal_error').modal('show');
+        },
+        success: function(data, textStatus, request) {
+            var blob = new Blob([data], {type: request.getResponseHeader('Content-Type')});
+            var downloadUrl = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = downloadUrl;
+            a.download = request.getResponseHeader('Content-Disposition');
+            document.body.appendChild(a);
+            a.click();
+        },
+        complete: function () {
+            $('#upload_progress').hide();
+        }
+    });
+});
+
 $('#delete_button').click(function () {
     $('#pairs .row').last().remove();
 });
@@ -26,14 +61,14 @@ $('#compare_button').click(function () {
         data: JSON.stringify(pairs),
         beforeSend: function () {
             $('#compared_pairs').empty();
-            $('.progress').show();
+            $('#compare_progress').show();
         },
         success: function (compared_pairs) {
             console.log('response ==> ' + JSON.stringify(compared_pairs));
             setComparedPairs(compared_pairs);
         },
         complete: function () {
-            $('.progress').hide();
+            $('#compare_progress').hide();
         }
     });
 });
